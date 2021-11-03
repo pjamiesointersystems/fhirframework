@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "dockeriris:DEMO",
+			"uri": "isfs://dockeriris:demo/"
+		},
+		{
+			"name": "dockeriris:DEMO (read-only)",
+			"uri": "isfs-readonly://dockeriris:demo/"
+		}
+	],
+	"settings": {
+		"workbench.colorTheme": "InterSystems Default Dark"
+	}
+}

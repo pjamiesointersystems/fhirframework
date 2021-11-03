@@ -1,0 +1,9 @@
+{
+    "objectscript.conn": {
+        "active": true,
+        "server": "dockeriris",
+        "ns": "DEMO",
+        "username": "pjamieso"
+    },
+    "workbench.colorTheme": "InterSystems Default Dark"
+}
