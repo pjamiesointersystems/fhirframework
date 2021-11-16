@@ -20,6 +20,8 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 {
 <Routes>
 <!-- Server Info -->
+<Route Url="/createFhirServer/:serverPath" Method="GET" Call="CreateFhirServer" Cors="true"/>
+<Route Url="/deleteFhirServer/:serverPath" Method="GET" Call="DeleteFhirServer" Cors="true"/>
 <Route Url="/info" Method="GET" Call="GetInfo" Cors="true"/>
 <Route Url="/resources" Method="GET" Call="GetResources" Cors="true"/>
 <!-- GET method to return collection of search parameters for a given resource -->
@@ -299,6 +301,118 @@ ClassMethod CompareArrays2(ByRef pFirst, ByRef pSecond, Output pMessage) As %Boo
     }
     
     Return $$$YES
+}
+
+/// Load sample data into newly created FHIRServer
+ClassMethod LoadSampleData(path As %String, np As %String) As %Status
+{
+    // example path to resources 
+    // example serve path  np=Demo "/csp/healthshare/fhir/demo/r4"
+    Set sc = $$$OK
+    Set appKey= "/csp/healthshare/fhir/"_np_"/r4"
+    Try {
+        Set $NAMESPACE = np
+        Set status = ##class(HS.FHIRServer.Tools.DataLoader).SubmitResourceFiles(path, "FHIRServer", appKey)
+    }
+    Catch ex {
+        Set tSC=ex.AsStatus()
+    }
+    Return sc
+}
+
+ClassMethod AddMap(packageName As %String, datadb As %String)
+{
+    Set Namespace = "%ALL"
+    Set $NAMESPACE = "%SYS"
+    Set Properties("Database")= datadb
+    Set status = ##class(Config.MapPackages).Create(Namespace,packageName,.Properties)
+    If ('status=$$$OK){
+        Do $SYSTEM.Status.DisplayError(status)
+    }
+}
+
+/// Description - for a new FHIR server definition add some packages
+/// from the demo namespace or other namespace to target database
+ClassMethod AddPackageMappings(np As %String) As %Status
+{
+    Set sc = $$$OK
+
+    Try {
+        //determine if the %ALL namespace exists, and set it if it does
+        If (##class(%SYS.Namespace).Exists("%ALL")){
+            
+        }
+        Else {
+            // if not create it
+            Set $NAMESPACE = "HSLIB"
+            Do ##class(HS.HC.Util.Installer).InstallFoundation("%ALL")
+            Set $NAMESPACE = "%ALL"
+        }  
+    }
+    Catch ex {
+        Set tSC=ex.AsStatus()
+    }
+    Set Namespace = np
+    Set Name = "Rest"
+    Set Properties("Database")= np
+    
+    Do ..AddMap("Rest", np)
+    Do ..AddMap("Services", np)
+    Do ..AddMap("BaseTypes", np)
+    Do ..AddMap("Collections", np)
+    Do ..AddMap("Framework", np)
+
+    Return sc
+}
+
+/// Configure a FHIR Server in a namespace that already exist
+ClassMethod CreateFHIRServer(np As %String) As %Status
+{
+    Set sc = $$$OK
+    Set tSC = $$$OK
+    Set appKey= "/csp/healthshare/fhir/"_np_"/r4"
+    Set strategyClass = "HS.FHIRServer.Storage.Json.InteractionsStrategy"
+    Try {
+        //determine if the namespace exists, and set it if it does
+        If (##class(%SYS.Namespace).Exists(np)){
+            Set $NAMESPACE = np
+        }
+        Else {
+            // if not create it
+            Set $NAMESPACE = "HSLIB"
+            Do ##class(HS.HC.Util.Installer).InstallFoundation(np)
+            Set $NAMESPACE = np
+        }  
+    }
+    Catch ex {
+        Set tSC=ex.AsStatus()
+    }
+    //next determine if the fhir sever already exists
+    If (##class(HS.FHIRServer.Installer).CSPAppExists(appKey)){
+        Write "FHIR server exists at path:"_appKey
+    }
+    Else {
+        Set metadataPackages = $LISTBUILD("hl7.fhir.r4.core@4.0.1","hl7.fhir.us.core@3.1.0")
+        Do ##class(HS.FHIRServer.Installer).InstallNamespace()
+        Do ##class(HS.FHIRServer.Installer).InstallInstance(appKey, strategyClass, metadataPackages)
+        Set strategy = ##class(HS.FHIRServer.API.InteractionsStrategy).GetStrategyForEndpoint(appKey)
+        Set configData = strategy.GetServiceConfigData()
+        Set configData.DefaultSearchPageSize = 1000
+        Set configData.MaxSearchPageSize = 1000
+        Set configData.MaxSearchResults = 1000
+        Do strategy.SaveServiceConfigData(configData)
+    }
+
+    
+    Return sc
+}
+
+ClassMethod DeleteFHIRServer(np As %String) As %Status
+{
+    Set sc = $$$OK
+    Set appKey= "/csp/healthshare/fhir/"_np_"/r4"
+    Do ##class(HS.FHIRServer.Installer).UninstallInstance(appKey)
+    Return sc
 }
 
 }

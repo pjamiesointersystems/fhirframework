@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+  <Document name="fhirsearch.ZPM">
+    <Module>
+      <Name>fhirsearch</Name>
+      <Version>1.0.0</Version>
+      <Description>rest api for providing fhir definitions</Description>
+      <Keywords>fhir</Keywords>
+      <Author>
+        <Person>Patrick Jamieson, M.D.</Person>
+        <Organization>InterSystems</Organization>
+        <CopyrightDate>MIT</CopyrightDate>
+        <License>2021</License>
+      </Author>
+      <Packaging>module</Packaging>
+      <Resource Name="BaseTypes.PKG"/>
+      <Resource Name="Collections.PKG"/>
+      <Resource Name="Framework.PKG"/>
+      <Resource Name="Rest.PKG"/>
+      <Resource Name="Services.PKG"/>
+      <CSPApplication CookiePath="/csp/healthshare/fhirsearch/" DefaultTimeout="900" Description="Rest Application to Get FHIR Resource Names and Search Parameters" DispatchClass="Rest.FHIRSearchRest" MatchRoles=":%All" PasswordAuthEnabled="1" Recurse="1" ServeFiles="1" ServeFilesTimeout="3600" UnauthenticatedEnabled="1" Url="/csp/healthshare/fhirsearch" UseSessionCookie="2"/>
+      <SourcesRoot>src</SourcesRoot>
+    </Module>
+  </Document>
+</Export>
