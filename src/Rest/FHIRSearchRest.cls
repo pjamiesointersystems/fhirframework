@@ -325,6 +325,7 @@ ClassMethod AddMap(packageName As %String, datadb As %String)
     Set Namespace = "%ALL"
     Set $NAMESPACE = "%SYS"
     Set Properties("Database")= datadb
+    //Set status = $SYSTEM.Config.MapPackages.Create(Namespace,packageName,.Properties)
     Set status = ##class(Config.MapPackages).Create(Namespace,packageName,.Properties)
     If ('status=$$$OK){
         Do $SYSTEM.Status.DisplayError(status)
@@ -353,7 +354,6 @@ ClassMethod AddPackageMappings(np As %String) As %Status
         Set tSC=ex.AsStatus()
     }
     Set Namespace = np
-    Set Name = "Rest"
     Set Properties("Database")= np
     
     Do ..AddMap("Rest", np)
@@ -413,6 +413,20 @@ ClassMethod DeleteFHIRServer(np As %String) As %Status
     Set appKey= "/csp/healthshare/fhir/"_np_"/r4"
     Do ##class(HS.FHIRServer.Installer).UninstallInstance(appKey)
     Return sc
+}
+
+ClassMethod FhirPathTest() As %Status
+{
+    Set fhirPathAPI = ##class(HS.FHIRPath.API).getInstance($LISTBUILD("hl7.fhir.r4.core@4.0.1"))
+    Set tree = fhirPathAPI.parse("name.given.empty()")
+    Set url = "/csp/healthshare/demo/fhir/r4"
+    Set fhirService = ##class(HS.FHIRServer.Service).EnsureInstance(url)
+    Set request = ##class(HS.FHIRServer.API.Data.Request).%New()
+    Set request.RequestPath = "/Patient/1"
+    Set request.RequestMethod = "GET"
+    Do fhirService.DispatchRequest(request, .response)
+    Do fhirPathAPI.evaluateToJson(response, tree, .OUTPUT)
+    Write OUTPUT
 }
 
 }
