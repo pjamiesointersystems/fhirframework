@@ -144,7 +144,10 @@ Method ReadFHIRSearchParams() As %Status
                 Set searchParameter = ##class(BaseTypes.SearchParameter).%New(br, sp, ver, exp, des, ty, .comp, .tar)
                 //Set status = searchParameter.%Save()
                 Do ..AddSearchParam(searchParameter, br)
-            } 
+            } Else {
+                Write !, des
+                Do ..FindAllResourceDescriptions(des)
+            }
            
             //Do ..SearchParams.SetAt(searchParameter, id)
             //Write searchParameter.ToString(), !
@@ -154,6 +157,29 @@ Method ReadFHIRSearchParams() As %Status
     }
 
     Return sc
+}
+
+Method FindAllResourceDescriptions(descriptions As %String) As %DynamicArray
+{
+    Set resNames = []
+    Set resDescriptions = []
+    Set matcher = ##class(%Regex.Matcher).%New("\[(.*)\](.*):(.*)")
+    Set matcher.Text = descriptions
+    While (matcher.Locate()) {
+        Set resName = matcher.GroupGet(1)
+        If $LENGTH(resName > 0) {
+            Do resNames.%Push(resName)
+        }
+        Set resDescription = matcher.GroupGet(3)
+        If $LENGTH(resDescription > 0) {
+            Set wresDescription = $ZSTRIP(resDescription, "<>W")
+            Do resDescriptions.%Push(wresDescription)
+        }
+
+
+    }
+
+    Return resNames
 }
 
 Method GetParamsForResource(resName As %String) As Collections.SearchParameterCollection

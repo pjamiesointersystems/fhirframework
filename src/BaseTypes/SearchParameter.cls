@@ -31,7 +31,13 @@ Method %OnNew(br As %String, name As %String, version As %String = "4.0.1", exp 
     Set ..Name = name
     Set ..Version = version
     Set ..Experimental = exp
-    Set ..Description = des
+    If ($LENGTH(des) > 130){
+        Set ..Description = $EXTRACT(des, 1, 130)
+    }
+    Else {
+        Set ..Description = des
+    }
+    
     Set ..Type = ty
    /*  If (comp = ""){
         Set comp = []
@@ -84,11 +90,6 @@ Storage Default
 <Value name="7">
 <Value>Type</Value>
 </Value>
-</Data>
-<Data name="Target">
-<Attribute>Target</Attribute>
-<Structure>node</Structure>
-<Subscript>"Target"</Subscript>
 </Data>
 <DataLocation>^BaseTypes.SearchParameterD</DataLocation>
 <DefaultData>SearchParameterDefaultData</DefaultData>
