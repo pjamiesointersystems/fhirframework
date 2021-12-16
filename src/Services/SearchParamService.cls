@@ -145,24 +145,29 @@ Method ReadFHIRSearchParams() As %Status
                 //Set status = searchParameter.%Save()
                 Do ..AddSearchParam(searchParameter, br)
             } Else {
-                Write !, des
-                Do ..FindAllResourceDescriptions(des)
+                //Write !, des
+                Set resNames = []
+                Set resDescriptions = []
+                //find all the resources and descriptions and create parameters
+                Do ..FindAllResourceDescriptions(des, .resNames, .resDescriptions)
+                Set resName = resNames.%Pop()
+                Set resDescription = resDescriptions.%Pop()
+                While resName '= "" {
+                    Set searchParameter = ##class(BaseTypes.SearchParameter).%New(resName, sp, ver, exp, resDescription, ty, .comp, .tar)
+                    Do ..AddSearchParam(searchParameter, resName)
+                    Set resName = resNames.%Pop()
+                    Set resDescription = resDescriptions.%Pop()
+                }
             }
            
-            //Do ..SearchParams.SetAt(searchParameter, id)
-            //Write searchParameter.ToString(), !
-            //Write searchParameter.ResTarget, !
-            //Write "target instance class name: ",$CLASSNAME(searchParameter.ResTarget), !
         }
     }
 
     Return sc
 }
 
-Method FindAllResourceDescriptions(descriptions As %String) As %DynamicArray
+Method FindAllResourceDescriptions(descriptions As %String, resNames As %Library.DynamicArray, resDescriptions As %Library.DynamicArray)
 {
-    Set resNames = []
-    Set resDescriptions = []
     Set matcher = ##class(%Regex.Matcher).%New("\[(.*)\](.*):(.*)")
     Set matcher.Text = descriptions
     While (matcher.Locate()) {
@@ -175,11 +180,7 @@ Method FindAllResourceDescriptions(descriptions As %String) As %DynamicArray
             Set wresDescription = $ZSTRIP(resDescription, "<>W")
             Do resDescriptions.%Push(wresDescription)
         }
-
-
-    }
-
-    Return resNames
+}
 }
 
 Method GetParamsForResource(resName As %String) As Collections.SearchParameterCollection

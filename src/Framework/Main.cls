@@ -7,7 +7,7 @@ Method %OnNew() As %Status
    
     Set sc = $$$OK
     //Set res = ##class(Services.ResourceService).%New()
-    Set res = ##class(Services.SearchParamService).%New()
+    //Set res = ##class(Services.SearchParamService).%New()
     //Set res = ##class(Services.RevSearchService).%New()
     //Do ##class(Rest.FHIRSearchRest).GetResources()
     //Do ##class(Rest.FHIRSearchRest).FhirPathTest()
@@ -16,6 +16,7 @@ Method %OnNew() As %Status
     //Do res.ReadFHIRSchema()
     //Do res.ReadFHIRSearchParams()
     //Do res.ReadFHIRRevInclude()
+    Do ##class(Services.FHIRPathService).FhirPathTest()
     Return sc
 }
 
