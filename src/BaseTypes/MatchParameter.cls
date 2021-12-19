@@ -29,6 +29,7 @@ Method AddVal(matchVal As %String) As %Status
 
     //this value needs to be added
     Do ..MatchVals.%Push(matchVal)
+    Return $$$OK
 }
 
 Method GetMatchVals() As %Collection.ListOfDT
@@ -41,6 +42,11 @@ Method GetMatchVals() As %Collection.ListOfDT
         }
 
      Return list
+}
+
+Method GetMatchValsArray() As %Library.DynamicArray
+{
+    Return ..MatchVals
 }
 
 Storage Default

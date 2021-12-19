@@ -36,6 +36,7 @@ ClassMethod AddMatchInfo(matchExp As %String, key As %String, matchArray As %Lib
     }
      Catch ex {
         Set tSC=ex.AsStatus()
+        Do $SYSTEM.OBJ.DisplayError(tSC) 
     }
 
 
@@ -48,7 +49,7 @@ ClassMethod AddMatchInfo(matchExp As %String, key As %String, matchArray As %Lib
 
 // res is a resource
 
-ClassMethod EvalFHIRPathExpression(exp As %String, res As %String) As %Library.DynamicArray
+ClassMethod EvalFHIRPathExpression(exp As %String, res As %String, matchArray As %Library.ArrayOfDataTypes)
 {
     Try {
         Set fhirPathAPI = ##class(HS.FHIRPath.API).getInstance($LISTBUILD("hl7.fhir.r4.core@4.0.1"))
@@ -56,12 +57,28 @@ ClassMethod EvalFHIRPathExpression(exp As %String, res As %String) As %Library.D
         Set resultArray = fhirPathAPI.evaluateToJson(res, exptree)
         //Write !, exp
         //Write !, resultArray.%ToJSON()
-        Do ..BuildMatchExpressions(exp, resultArray)
-        Return resultArray
+        Do ..BuildMatchExpressions(exp, resultArray, .matchArray)
         
     }
     Catch ex {
         Set tSC=ex.AsStatus()
+        Do $SYSTEM.OBJ.DisplayError(tSC) 
+    }
+}
+
+ClassMethod EvalFHIRPathExpOne(exp As %String, res As %String) As %String
+{
+    Try {
+        Set fhirPathAPI = ##class(HS.FHIRPath.API).getInstance($LISTBUILD("hl7.fhir.r4.core@4.0.1"))
+        Set exptree = fhirPathAPI.parse(exp)
+        Set result = fhirPathAPI.evaluateToJson(res, exptree)
+        Write !, exp
+        Write !, result.%ToJSON()
+        Return result
+    }
+    Catch ex {
+        Set tSC=ex.AsStatus()
+        Do $SYSTEM.OBJ.DisplayError(tSC) 
         Return []
     }
 }
@@ -76,40 +93,60 @@ ClassMethod CountFHIRPathExpression(exp As %String, res As %String) As %Numeric
     }
     Catch ex {
         Set tSC=ex.AsStatus()
+        Do $SYSTEM.OBJ.DisplayError(tSC) 
         Return 0
     }
 }
 
-ClassMethod BuildMatchExpressions(pkey As %String, exp As %DynamicArray)
+ClassMethod BuildMatchExpressions(pkey As %String, exp As %DynamicArray, matchArray As %Library.ArrayOfDataTypes)
 {
-    Set matchArray =##class(%Library.ArrayOfDataTypes).%New()
+    //Set matchArray =##class(%Library.ArrayOfDataTypes).%New()
     Do ..IterateOverFhirObject(pkey, exp, .matchArray)
-     //return the results
-        Set val = "" 
-        Do matchArray.GetNext(.val)
-        While $LENGTH(val) > 0 {
-        Write !, val 
-        Set matchParameter = matchArray.GetAt(val)
-        Set matchVals = matchParameter.GetMatchVals()
-        Do ..PrintList(matchVals, 5)
-        Do matchArray.GetNext(.val)
-    }
 }
 
-ClassMethod PrintList(col As %Collection.ListOfDT, padding As %Numeric)
+ClassMethod PrintArray(col As %Library.ArrayOfDataTypes)
 {
-    ; iterate over contents of list
+    ; iterate over contents of array
     Write !
-    For i=1:1:col.Count()  Write ?padding, col.GetAt(i),!
+    Set key=""
+	For  Set value=col.GetNext(.key) Quit:key=""   Write key,":",value,!
+}
+
+ClassMethod CreateJson(col As %Library.ArrayOfDataTypes) As %String
+{
+    ; iterate over contents of array
+    Set key=""
+    
+    Set allresults = []
+    Set val = col.GetNext(.key)
+    While val {
+        //mp are matching parameters, which is a dynamic array
+        Set result = {}
+        Set mp = val.GetMatchValsArray()
+        Set ja = mp.%ToJSON()
+        Do result.%Set(key, mp)
+        //Write !, result.%ToJSON()
+        Set val = col.GetNext(.key)
+        Do allresults.%Push(result)
+    }
+
+    //Write !, allresults
+    //Write !, allresults.%ToJSON()
+    //Return allresults
+    Return allresults.%ToJSON()
 }
 
 ClassMethod IterateOverFhirObject(pkey As %String, exp As %DynamicObject, matchArray As %Library.ArrayOfDataTypes)
 {
+   Try {   
     If $CLASSNAME(exp) = "%Library.DynamicObject"{
         #dim iterator As %Iterator.Object
         Set iterator = exp.%GetIterator()
         While iterator.%GetNext(.key , .fhirPath ){
-            If $CLASSNAME(fhirPath) = "%Library.DynamicObject"{
+            If $ISVALIDNUM(fhirPath){
+                 Do ..AddMatchInfo(fhirPath, pkey_"."_key, .matchArray)
+            }
+            ElseIf $CLASSNAME(fhirPath) = "%Library.DynamicObject"{
                 //Write !, pkey_"."_key
                 Do ..IterateOverFhirObject(pkey_"."_key, fhirPath, .matchArray)
             }
@@ -127,7 +164,10 @@ ClassMethod IterateOverFhirObject(pkey As %String, exp As %DynamicObject, matchA
         #dim iterator2 As %Iterator.Array
         Set iterator2 = exp.%GetIterator()
         While iterator2.%GetNext(.key , .fhirPath ){
-            If $CLASSNAME(fhirPath) = "%Library.DynamicObject"{
+            If $ISVALIDNUM(fhirPath){
+                 Do ..AddMatchInfo(fhirPath, pkey_"."_key, .matchArray)
+            }
+            ElseIf $CLASSNAME(fhirPath) = "%Library.DynamicObject"{
                 //Write !, pkey
                 Do ..IterateOverFhirObject(pkey, fhirPath, .matchArray)
             }
@@ -142,16 +182,23 @@ ClassMethod IterateOverFhirObject(pkey As %String, exp As %DynamicObject, matchA
         }
     }
     Else {
-         //Write !, exp
+         Write !, exp
+    }
+   }
+    Catch ex {
+        Set tSC=ex.AsStatus()
+        Do $SYSTEM.OBJ.DisplayError(tSC) 
     }
 }
 
-ClassMethod FhirPathSample(res As %String, exp As %String)
+ClassMethod FhirPathSample(res As %String, exp As %String) As %String
 {
     //holds the result of evaluation of FHIRPath expression against list of resources
     Set resultArray = []
     //holds the result of evaluation of one FHIRPath expression
     Set fhirPathArray = []
+    //holds a array of all matches against a sample of resources (n=10)
+    Set matchArray =##class(%Library.ArrayOfDataTypes).%New()
     Set baseUrl = ..#baseUrl
     Set fhirService = ##class(HS.FHIRServer.Service).EnsureInstance(baseUrl)
     Set request = ##class(HS.FHIRServer.API.Data.Request).%New()
@@ -164,31 +211,55 @@ ClassMethod FhirPathSample(res As %String, exp As %String)
         Set id = idArray.%Pop()
         Do fhirService.DispatchRequest(request, .response)
         Set resJson = response.Json
-        Set fhirPathArray = ..EvalFHIRPathExpression(exp, resJson)
-        Write fhirPathArray.%ToJSON(), !
+        Do ..EvalFHIRPathExpression(exp, resJson, .matchArray)
+        //Write !, matchArray.Count()
+        //Write fhirPathArray.%ToJSON(), !
         //Write response.Json.%ToJSON(), !
     }
+
+    //Write !, "Nearly Done"
+    Write !, matchArray.Count()
+    Set results = ..CreateJson(.matchArray)
+    //Do ..PrintArray(matchArray)
+    //Write !, results
+    Return results
+}
+
+// Take in a fhirpath expression, and sample it over 10 resources
+
+ClassMethod FHIRPathRest(exp As %String) As %String
+{
+    Set res = $PIECE(exp, ".", 1)
+    Set result = ..FhirPathSample(res, exp)
+    Write !, result
+    Return result
 }
 
 ClassMethod FhirPathTest() As %Status
 {
-    //Set url = "/csp/healthshare/demo/fhir/r4"
-    //Set fhirService = ##class(HS.FHIRServer.Service).EnsureInstance(url)
-    //Set request = ##class(HS.FHIRServer.API.Data.Request).%New()
-    //Set request.RequestPath = "/Claim"
-    //Set request.RequestMethod = "GET"
-    //Do fhirService.DispatchRequest(request, .response)
+    /* Set url = "/csp/healthshare/demo/fhir/r4"
+    Set fhirService = ##class(HS.FHIRServer.Service).EnsureInstance(url)
+    Set request = ##class(HS.FHIRServer.API.Data.Request).%New()
+    Set request.RequestPath = "/Patient/1"
+    Set request.RequestMethod = "GET"
+    Do fhirService.DispatchRequest(request, .response) */
     //Write response.Json.%ToJSON()
     //Do ##class(Services.FHIRPathService).GetIdsforResource("Claim")
     Do ##class(Services.FHIRPathService).FhirPathSample("Patient", "Patient.extension")
+    //Do ##class(Services.FHIRPathService).FhirPathSample("Patient", "Patient.identifier")
     //Set res = response.Json
-    //Do ..EvalFHIRPathExpression("Patient.name.given[0]", res)
-    //Do ..EvalFHIRPathExpression("Patient.identifier", res)
-    //Do ..EvalFHIRPathExpression("Patient.identifier.system", res)
-    //Do ..EvalFHIRPathExpression("Patient.identifier.where(system='http://hospital.smarthealthit.org')", res)
-    //Do ..EvalFHIRPathExpression("Patient.identifier.type.coding.where(code='MR')", res)
-    //Do ..EvalFHIRPathExpression("Patient.name", res)
-    //Do ..EvalFHIRPathExpression("Patient.telecom.exists(system='phone')", res)
+    //Do ..EvalFHIRPathExpOne("Patient.name.given[0]", res)
+    //Do ..EvalFHIRPathExpOne("Patient.extension", res)
+    //Do ..EvalFHIRPathExpOne("Patient.extension.where(url='http://hl7.org/fhir/StructureDefinition/patient-birthPlace')", res)
+    //Do ..EvalFHIRPathExpOne("Patient.extension.valueAddress.where(country='US')", res)
+    //Do ..EvalFHIRPathExpOne("Patient.extension.valueAddress", res)
+    //Do ..EvalFHIRPathExpOne("Patient.extension.valueString", res)
+    //Do ..EvalFHIRPathExpOne("Patient.extension.url", res)
+    //Do ..EvalFHIRPathExpOne("Patient.identifier.system", res)
+    //Do ..EvalFHIRPathExpOne("Patient.identifier.where(system='http://hospital.smarthealthit.org')", res)
+    //Do ..EvalFHIRPathExpOne("Patient.identifier.type.coding.where(code='MR')", res)
+    //Do ..EvalFHIRPathExpOne("Patient.name", res)
+    //Do ..EvalFHIRPathExpOne("Patient.telecom.exists(system='phone')", res)
     //Set telecount = ..CountFHIRPathExpression("Patient.telecom", res)
     //Write !, "Telecom count = "_telecount
 }

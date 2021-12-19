@@ -28,11 +28,19 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 <Route Url="/searchparams/:id" Method="GET" Call="GetSearchParameters"/>
 <!-- GET method to return collection of reverse include parameters for a given resource -->
 <Route Url="/reverseinclude/:id" Method="GET" Call="GetRevSearchInclude"/>
+<!-- GET method to return result of FHIR path expression evaluation -->
+<Route Url="/evalFhirexp/:exp" Method="GET" Call="EvalFhirExp" Cors="true"/>
 </Routes>
 }
 
+ClassMethod EvalFhirExp(exp As %String) As %String
+{
+  Set result = ##class(Services.FHIRPathService).FHIRPathRest(exp)
+  Return ..%ProcessResult($$$OK, result)
+}
+
 /// FHIRSearchRest general information
-ClassMethod GetInfo() As %Status
+ClassMethod GetInfo() As %String
 {
   Set version = ..#Version
   Set info = {
