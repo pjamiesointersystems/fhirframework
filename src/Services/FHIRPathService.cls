@@ -112,7 +112,7 @@ ClassMethod PrintArray(col As %Library.ArrayOfDataTypes)
 	For  Set value=col.GetNext(.key) Quit:key=""   Write key,":",value,!
 }
 
-ClassMethod CreateJson(col As %Library.ArrayOfDataTypes) As %String
+ClassMethod CreateJson(col As %Library.ArrayOfDataTypes) As %Library.DynamicObject
 {
     ; iterate over contents of array
     Set key=""
@@ -133,7 +133,10 @@ ClassMethod CreateJson(col As %Library.ArrayOfDataTypes) As %String
     //Write !, allresults
     //Write !, allresults.%ToJSON()
     //Return allresults
-    Return allresults.%ToJSON()
+    Set ar = {}
+    Do ar.%Set("result", allresults)
+    Return ar
+    //Return ar.%ToJSON()
 }
 
 ClassMethod IterateOverFhirObject(pkey As %String, exp As %DynamicObject, matchArray As %Library.ArrayOfDataTypes)
@@ -218,7 +221,7 @@ ClassMethod FhirPathSample(res As %String, exp As %String) As %String
     }
 
     //Write !, "Nearly Done"
-    Write !, matchArray.Count()
+    //Write !, matchArray.Count()
     Set results = ..CreateJson(.matchArray)
     //Do ..PrintArray(matchArray)
     //Write !, results
@@ -231,7 +234,7 @@ ClassMethod FHIRPathRest(exp As %String) As %String
 {
     Set res = $PIECE(exp, ".", 1)
     Set result = ..FhirPathSample(res, exp)
-    Write !, result
+    //Write !, result
     Return result
 }
 

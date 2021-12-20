@@ -16,7 +16,8 @@ Method %OnNew() As %Status
     //Do res.ReadFHIRSchema()
     //Do res.ReadFHIRSearchParams()
     //Do res.ReadFHIRRevInclude()
-    Do ##class(Services.FHIRPathService).FhirPathTest()
+    //Do ##class(Services.FHIRPathService).FhirPathTest()
+    Do ##class(Rest.FHIRSearchRest).EvalFhirExp("Patient.extension")
     Return sc
 }
 
