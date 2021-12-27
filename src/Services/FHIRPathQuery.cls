@@ -8,6 +8,13 @@ FROM HSFHIR_X0001_R.Rsrc
 WHERE (ResourceType = :res)
 }
 
+Query ResourceCount(res As %String = "") As %SQLQuery(COMPILEMODE = "IMMEDIATE", CONTAINID = 1, ROWSPEC = "Count:%Integer", SELECTMODE = "RUNTIME") [ SqlName = SP_ResourceCount, SqlProc ]
+{
+SELECT Count(ResourceType)
+FROM HSFHIR_X0001_R.Rsrc
+WHERE (ResourceType = :res)
+}
+
 Storage Default
 {
 <Data name="FHIRPathQueryDefaultData">

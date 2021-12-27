@@ -21,6 +21,21 @@ ClassMethod GetIdsforResource(res As %String = "") As %Library.DynamicArray
     Return idArray
 }
 
+ClassMethod GetResourceCount(res As %String = "") As %Integer
+{
+    Set statement=##class(%SQL.Statement).%New()   
+    Set sc = statement.%PrepareClassQuery("Services.FHIRPathQuery","ResourceCount")   
+   
+    If $$$ISERR(sc) {
+    Do $SYSTEM.OBJ.DisplayError(sc) 
+    }
+  
+    Set resultset=statement.%Execute(res)
+    Do resultset.%Next()
+    Set result= resultset.%Get("Count")
+    Return result
+}
+
 ClassMethod AddMatchInfo(matchExp As %String, key As %String, matchArray As %Library.ArrayOfDataTypes) As %Status
 {
     Set sc = $$$OK
@@ -248,8 +263,9 @@ ClassMethod FhirPathTest() As %Status
     Do fhirService.DispatchRequest(request, .response) */
     //Write response.Json.%ToJSON()
     //Do ##class(Services.FHIRPathService).GetIdsforResource("Claim")
-    Do ##class(Services.FHIRPathService).FhirPathSample("Patient", "Patient.extension")
+    //Do ##class(Services.FHIRPathService).FhirPathSample("Patient", "Patient.extension")
     //Do ##class(Services.FHIRPathService).FhirPathSample("Patient", "Patient.identifier")
+    //Do ##class(Services.FHIRPathService).FhirPathSample("Patient", "Patient.extension.where(url='http://hl7.org/fhir/StructureDefinition/patient-birthPlace')")
     //Set res = response.Json
     //Do ..EvalFHIRPathExpOne("Patient.name.given[0]", res)
     //Do ..EvalFHIRPathExpOne("Patient.extension", res)

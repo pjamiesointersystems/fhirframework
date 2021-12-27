@@ -23,19 +23,30 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 <Route Url="/createFhirServer/:serverPath" Method="GET" Call="CreateFhirServer" Cors="true"/>
 <Route Url="/deleteFhirServer/:serverPath" Method="GET" Call="DeleteFhirServer" Cors="true"/>
 <Route Url="/info" Method="GET" Call="GetInfo" Cors="true"/>
-<Route Url="/resources" Method="GET" Call="GetResources" Cors="true"/>
+<Route Url="/resources" Method="GET" Call="GetResources" />
 <!-- GET method to return collection of search parameters for a given resource -->
-<Route Url="/searchparams/:id" Method="GET" Call="GetSearchParameters"/>
+<Route Url="/searchparams/:id" Method="GET" Call="GetSearchParameters" />
 <!-- GET method to return collection of reverse include parameters for a given resource -->
-<Route Url="/reverseinclude/:id" Method="GET" Call="GetRevSearchInclude"/>
+<Route Url="/reverseinclude/:id" Method="GET" Call="GetRevSearchInclude" />
 <!-- GET method to return result of FHIR path expression evaluation -->
-<Route Url="/evalFhirexp/:exp" Method="GET" Call="EvalFhirExp" Cors="true"/>
+<Route Url="/evalFhirexp/:exp" Method="GET" Call="EvalFhirExp" Cors="true" />
+<!-- GET method to return count of FHIR resources in FHIR repository-->
+<Route Url="/fhircount/:exp" Method="GET" Call="GetResourceCount" Cors="true" />
 </Routes>
 }
 
-ClassMethod EvalFhirExp(exp As %String) As %String
+ClassMethod EvalFhirExp(exp As %String = "") As %String
 {
-  Set result = ##class(Services.FHIRPathService).FHIRPathRest(exp)
+  Set exp2 =  $GET(%request.Data("where",1))
+  Set exp2 = $ZSTRIP(exp2, "*W")
+  If '(exp2 = ""){
+      Set fullquery = exp_".where"_exp2
+      Set result = ##class(Services.FHIRPathService).FHIRPathRest(fullquery)
+  }
+  Else {
+      Set result = ##class(Services.FHIRPathService).FHIRPathRest(exp)
+  }
+  
   Return ..%ProcessResult($$$OK, result)
 }
 
@@ -128,6 +139,24 @@ ClassMethod GetSearchParameters(id As %String) As %Status
     Do ..%ProcessJson($$$OK, result)
 
     Return sc
+}
+
+ClassMethod GetResourceCount(res As %String)
+{
+    #dim e As %Exception.AbstractException
+
+    Set sc = $$$OK
+    Set result ={}
+    If '(res = ""){
+      Set count = ##class(Services.FHIRPathService).GetResourceCount(res)
+      Set result.count = count 
+    }
+    Else {
+      Set count = 0
+      Set result.count = count
+    }
+
+    Return ..%ProcessResult($$$OK, result)
 }
 
 ClassMethod GetRevSearchInclude(id As %String) As %Status
