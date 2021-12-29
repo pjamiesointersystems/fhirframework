@@ -23,7 +23,9 @@ Property Comparator As %DynamicArray;
 
 Property ResTarget As %DynamicArray;
 
-Method %OnNew(br As %String, name As %String, version As %String = "4.0.1", exp As %Boolean, des As %DynamicArray, ty As %DynamicArray, comp As %DynamicArray, tar As %DynamicArray) As %Status
+Property PathExpression As %String(MAXLEN = 500);
+
+Method %OnNew(br As %String, name As %String, version As %String = "4.0.1", exp As %Boolean, des As %DynamicArray, ty As %DynamicArray, comp As %DynamicArray, tar As %DynamicArray, fp As %String = "") As %Status
 {
     If br = "" Quit $$$ERROR($$$GeneralError, "Must supply base resource name")
     Set ..BaseResource = br
@@ -31,6 +33,8 @@ Method %OnNew(br As %String, name As %String, version As %String = "4.0.1", exp 
     Set ..Name = name
     Set ..Version = version
     Set ..Experimental = exp
+    //find values based on fhirpath expression
+    Set ..PathExpression = fp
     If ($LENGTH(des) > 130){
         Set ..Description = $EXTRACT(des, 1, 130)
     }
@@ -89,6 +93,9 @@ Storage Default
 </Value>
 <Value name="7">
 <Value>Type</Value>
+</Value>
+<Value name="8">
+<Value>PathExpression</Value>
 </Value>
 </Data>
 <DataLocation>^BaseTypes.SearchParameterD</DataLocation>

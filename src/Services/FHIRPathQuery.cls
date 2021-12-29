@@ -15,6 +15,13 @@ FROM HSFHIR_X0001_R.Rsrc
 WHERE (ResourceType = :res)
 }
 
+Query FHIRPathExp(res As %String = "", sp As %String = "") As %SQLQuery(COMPILEMODE = "IMMEDIATE", CONTAINID = 1, ROWSPEC = "Expression:%String", SELECTMODE = "RUNTIME") [ SqlName = SP_FhirPathExp, SqlProc ]
+{
+SELECT Top 1 PathExpression
+FROM BaseTypes.SearchParameter 
+WHERE (BaseResource = :res and Name = :sp)
+}
+
 Storage Default
 {
 <Data name="FHIRPathQueryDefaultData">

@@ -36,6 +36,20 @@ ClassMethod GetResourceCount(res As %String = "") As %Integer
     Return result
 }
 
+ClassMethod GetFhirPathExp(res As %String, sp As %String) As %String
+{
+    Set statement=##class(%SQL.Statement).%New()   
+    Set sc = statement.%PrepareClassQuery("Services.FHIRPathQuery","FHIRPathExp")   
+    If $$$ISERR(sc) {
+    Do $SYSTEM.OBJ.DisplayError(sc) 
+    }
+  
+    Set resultset=statement.%Execute(res, sp)   
+    Do resultset.%Next() 
+    Set fp = resultset.%Get("Expression")
+    Return fp
+}
+
 ClassMethod AddMatchInfo(matchExp As %String, key As %String, matchArray As %Library.ArrayOfDataTypes) As %Status
 {
     Set sc = $$$OK
@@ -241,6 +255,51 @@ ClassMethod FhirPathSample(res As %String, exp As %String) As %String
     //Do ..PrintArray(matchArray)
     //Write !, results
     Return results
+}
+
+ClassMethod TransformFhirPathExpression(exp As %String) As %String
+{
+    Set newstr=$REPLACE(exp,"-",".")
+    Return newstr
+}
+
+// Take a simple fhirpath expression consisting of resource and elements
+
+// , and sample values over 10 resources
+
+ClassMethod FHIRPathValues(res As %String, sp As %String) As %Library.DynamicArray
+{
+   Set exp = ..GetFhirPathExp(res, sp)
+   If exp = "" {
+       //see if replacing sp (search parameter) "-" with "."
+       Set exp = ..TransformFhirPathExpression(sp)
+   }
+
+
+   If exp '= "" {
+      Set output = ..FhirPathSample(res, exp)
+      Set valArray = output.result
+      If ($CLASSNAME(valArray) = "%Library.DynamicArray"){
+        #dim iterator As %Iterator.Object
+        Set iterator = valArray.%GetIterator()
+        Do iterator.%GetNext(.key,.vals) 
+        If ($CLASSNAME(vals) = "%Library.DynamicObject"){
+            Set iterator = vals.%GetIterator()
+            Do iterator.%GetNext(.key,.finalvals) 
+            Return finalvals
+        }
+        Else {
+            Return vals
+        }
+      }
+      Else {
+          Return valArray
+      }
+      
+   }
+   Else {
+      Return []
+   }
 }
 
 // Take in a fhirpath expression, and sample it over 10 resources

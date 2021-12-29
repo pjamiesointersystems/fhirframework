@@ -95,7 +95,7 @@ Method ReadFHIRSearchParams() As %Status
     Set i = FhirSearchParamObj.entry.%GetIterator()
     While i.%GetNext(.key , .fhirPath ) {
         //Write key_"="_fhirPath,!
-        Set id = "", rtype = "", br = "", ver = "", sp = "", exp = "", des = "", ty = "", comp = "", tar = ""
+        Set id = "", rtype = "", br = "", ver = "", sp = "", exp = "", des = "", ty = "", comp = "", tar = "", fexp=""
         Set j = fhirPath.resource.%GetIterator()
         While j.%GetNext(.subkey, .subfhirPath){
             //Write subkey_"="_subfhirPath, !
@@ -133,15 +133,24 @@ Method ReadFHIRSearchParams() As %Status
                 Set comp = subfhirPath
                 Continue
             }
+            If (subkey = "expression"){
+                Set fexp = subfhirPath
+                If ($LENGTH(fexp) > 99){
+                    Set fexp = ""
+                }
+                Continue
+            }
+
             If ((ty = "reference") && (subkey = "target")){
                 Set tar = subfhirPath
                 Continue
             }
+
     }
         If (rtype = "SearchParameter"){
             Set lookForMultiResources = ..ScanForContainedText("multiple res", des)
             If (lookForMultiResources = 0){
-                Set searchParameter = ##class(BaseTypes.SearchParameter).%New(br, sp, ver, exp, des, ty, .comp, .tar)
+                Set searchParameter = ##class(BaseTypes.SearchParameter).%New(br, sp, ver, exp, des, ty, .comp, .tar, fexp)
                 //Set status = searchParameter.%Save()
                 Do ..AddSearchParam(searchParameter, br)
             } Else {
@@ -153,7 +162,7 @@ Method ReadFHIRSearchParams() As %Status
                 Set resName = resNames.%Pop()
                 Set resDescription = resDescriptions.%Pop()
                 While resName '= "" {
-                    Set searchParameter = ##class(BaseTypes.SearchParameter).%New(resName, sp, ver, exp, resDescription, ty, .comp, .tar)
+                    Set searchParameter = ##class(BaseTypes.SearchParameter).%New(resName, sp, ver, exp, resDescription, ty, .comp, .tar, fexp)
                     Do ..AddSearchParam(searchParameter, resName)
                     Set resName = resNames.%Pop()
                     Set resDescription = resDescriptions.%Pop()

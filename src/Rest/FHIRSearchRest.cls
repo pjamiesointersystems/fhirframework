@@ -32,7 +32,18 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 <Route Url="/evalFhirexp/:exp" Method="GET" Call="EvalFhirExp" Cors="true" />
 <!-- GET method to return count of FHIR resources in FHIR repository-->
 <Route Url="/fhircount/:exp" Method="GET" Call="GetResourceCount" Cors="true" />
+<!-- GET method to return sample values from Fhir Search-->
+<Route Url="/fhirval/:res/:sp" Method="GET" Call="GetSampleVals" Cors="true" />
 </Routes>
+}
+
+ClassMethod GetSampleVals(res As %String, sp As %String) As %String
+{
+    Set result = ##class(Services.FHIRPathService).FHIRPathValues(res, sp)
+    If result '= ""
+        Return ..%ProcessResult($$$OK, result)
+    Else 
+        Return ..%ProcessResult($$$OK, [])
 }
 
 ClassMethod EvalFhirExp(exp As %String = "") As %String
