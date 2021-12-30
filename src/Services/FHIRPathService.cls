@@ -47,6 +47,11 @@ ClassMethod GetFhirPathExp(res As %String, sp As %String) As %String
     Set resultset=statement.%Execute(res, sp)   
     Do resultset.%Next() 
     Set fp = resultset.%Get("Expression")
+    Set type = resultset.%Get("Type")
+    If ((type = "reference") && (fp '="")){
+        //append this to the expresssion
+        Set fp = fp_"."_type
+    }
     Return fp
 }
 
@@ -269,14 +274,22 @@ ClassMethod TransformFhirPathExpression(exp As %String) As %String
 
 ClassMethod FHIRPathValues(res As %String, sp As %String) As %Library.DynamicArray
 {
+   Set emptyResult = []
    Set exp = ..GetFhirPathExp(res, sp)
-   If exp = "" {
+   If ($LENGTH(exp) > 75){
+       //the look up was incorrect
+       Set exp = sp
+   }
+
+   If (exp = "") {
        //see if replacing sp (search parameter) "-" with "."
        Set exp = ..TransformFhirPathExpression(sp)
    }
 
+   
 
-   If exp '= "" {
+
+   If (exp '= "") {
       Set output = ..FhirPathSample(res, exp)
       Set valArray = output.result
       If ($CLASSNAME(valArray) = "%Library.DynamicArray"){
@@ -298,7 +311,7 @@ ClassMethod FHIRPathValues(res As %String, sp As %String) As %Library.DynamicArr
       
    }
    Else {
-      Return []
+      Return emptyResult
    }
 }
 

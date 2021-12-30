@@ -40,10 +40,12 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 ClassMethod GetSampleVals(res As %String, sp As %String) As %String
 {
     Set result = ##class(Services.FHIRPathService).FHIRPathValues(res, sp)
-    If result '= ""
+    If (result '= ""){
         Return ..%ProcessResult($$$OK, result)
-    Else 
+    }
+    Else {
         Return ..%ProcessResult($$$OK, [])
+    }
 }
 
 ClassMethod EvalFhirExp(exp As %String = "") As %String
@@ -64,11 +66,9 @@ ClassMethod EvalFhirExp(exp As %String = "") As %String
 /// FHIRSearchRest general information
 ClassMethod GetInfo() As %String
 {
-  Set version = ..#Version
-  Set info = {
-    "version": (version)
-  }
-  Return ..%ProcessResult($$$OK, info)
+  Set fhirservers = []
+  Set sc =  ##class(Services.FHIRServerService).FindFhirServers(.fhirservers)
+  Return ..%ProcessResult($$$OK, fhirservers)
 }
 
 /// Get and Return a list of all FHIR resources

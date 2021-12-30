@@ -19,7 +19,7 @@ Method %OnNew() As %Status
     //Do ##class(Services.FHIRPathService).FhirPathTest()
     //Do ##class(Rest.FHIRSearchRest).EvalFhirExp("Patient.extension")
     //Do ##class(Rest.FHIRSearchRest).EvalFhirExp("Patient.extension.where(url='http://hl7.org/fhir/StructureDefinition/patient-birthPlace')")
-    Do ##class(Rest.FHIRSearchRest).GetSampleVals("Patient", "address-country")
+    Do ##class(Rest.FHIRSearchRest).GetSampleVals("Encounter", "patient")
     Return sc
 }
 

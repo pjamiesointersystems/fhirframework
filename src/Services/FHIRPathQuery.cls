@@ -15,9 +15,9 @@ FROM HSFHIR_X0001_R.Rsrc
 WHERE (ResourceType = :res)
 }
 
-Query FHIRPathExp(res As %String = "", sp As %String = "") As %SQLQuery(COMPILEMODE = "IMMEDIATE", CONTAINID = 1, ROWSPEC = "Expression:%String", SELECTMODE = "RUNTIME") [ SqlName = SP_FhirPathExp, SqlProc ]
+Query FHIRPathExp(res As %String = "", sp As %String = "") As %SQLQuery(COMPILEMODE = "IMMEDIATE", CONTAINID = 1, ROWSPEC = "Expression:%String,Type:%String", SELECTMODE = "RUNTIME") [ SqlName = SP_FhirPathExp, SqlProc ]
 {
-SELECT Top 1 PathExpression
+SELECT Top 1 PathExpression, Type
 FROM BaseTypes.SearchParameter 
 WHERE (BaseResource = :res and Name = :sp)
 }
