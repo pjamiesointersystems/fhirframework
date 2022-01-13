@@ -19,7 +19,17 @@ Method %OnNew() As %Status
     //Do ##class(Services.FHIRPathService).FhirPathTest()
     //Do ##class(Rest.FHIRSearchRest).EvalFhirExp("Patient.extension")
     //Do ##class(Rest.FHIRSearchRest).EvalFhirExp("Patient.extension.where(url='http://hl7.org/fhir/StructureDefinition/patient-birthPlace')")
-    Do ##class(Rest.FHIRSearchRest).GetSampleVals("Encounter", "patient")
+    //Do ##class(Rest.FHIRSearchRest).GetSampleVals("Patient", "address-city")
+    //Do ##class(Rest.FHIRSearchRest).DeleteFhirServer("test")
+    //Do ##class(Rest.FHIRSearchRest).CreateFhirServer("test")
+    //Do ##class(Services.FHIRServerService).CreateFhirServerUsingQueue("test")
+    //Set files = []
+    //Set sc=##class(Services.FHIRServerService).GetDirectoryTree("/twst1","*.json",.files)
+    Set pCount = 0
+    //Set sc=##class(Rest.FHIRSearchRest).GetFileCount()
+    //Write sc
+    Do ##class(Services.FHIRServerService).LoadSampleData( "test", "/data/fhirdata/1000Set") 
+    //Do ##class(Services.FHIRServerService).SampleLoadProgress("test", .logger)
     Return sc
 }
 

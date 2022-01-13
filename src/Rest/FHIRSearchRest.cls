@@ -20,21 +20,104 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 {
 <Routes>
 <!-- Server Info -->
-<Route Url="/createFhirServer/:serverPath" Method="GET" Call="CreateFhirServer" Cors="true"/>
-<Route Url="/deleteFhirServer/:serverPath" Method="GET" Call="DeleteFhirServer" Cors="true"/>
+<Route Url="/createFhirServer/:serverPath" Method="Get" Call="CreateFhirServer"  Cors="true"/>
+<Route Url="/deleteFhirServer/:serverPath" Method="Get" Call="DeleteFhirServer" Cors="true"/>
 <Route Url="/info" Method="GET" Call="GetInfo" Cors="true"/>
-<Route Url="/resources" Method="GET" Call="GetResources" />
+<Route Url="/resources" Method="GET" Call="GetResources" Cors="true" />
 <!-- GET method to return collection of search parameters for a given resource -->
-<Route Url="/searchparams/:id" Method="GET" Call="GetSearchParameters" />
+<Route Url="/searchparams/:id" Method="GET" Call="GetSearchParameters" Cors="true" />
 <!-- GET method to return collection of reverse include parameters for a given resource -->
-<Route Url="/reverseinclude/:id" Method="GET" Call="GetRevSearchInclude" />
+<Route Url="/reverseinclude/:id" Method="GET" Call="GetRevSearchInclude" Cors="true" />
 <!-- GET method to return result of FHIR path expression evaluation -->
 <Route Url="/evalFhirexp/:exp" Method="GET" Call="EvalFhirExp" Cors="true" />
 <!-- GET method to return count of FHIR resources in FHIR repository-->
 <Route Url="/fhircount/:exp" Method="GET" Call="GetResourceCount" Cors="true" />
 <!-- GET method to return sample values from Fhir Search-->
 <Route Url="/fhirval/:res/:sp" Method="GET" Call="GetSampleVals" Cors="true" />
+<Route Url="/fhirdata/:dir" Method="GET" Call="GetDirectories" Cors="true" />
+<Route Url="/fhircount" Method="GET" Call="GetFileCount" Cors="true" />
+<Route Url="/fhirload/:np" Method="GET" Call="LoadFhirData" Cors="true" />
+<Route Url="/fhirload/progress/:np" Method="GET" Call="ProgressLoadFhirData" Cors="true" />
 </Routes>
+}
+
+/// Description
+ClassMethod DeleteFhirServer(np As %String) As %Status
+{
+    #dim tCookie As %String
+    #dim tMsgArray As %DynamicArray = []
+
+    Set sc = $$$OK
+    Try {
+         #; Capture output
+         Set tSC=##class(%Atelier.v1.Utils.General).BeginCaptureOutput(.tCookie)
+         If $$$ISERR(tSC) Quit
+         Set retVal = ##class(Services.FHIRServerService).DeleteFHIRServer(np)
+          #; MUST close the redirect whatever happens
+         If $DATA(tCookie) Do ##class(%Atelier.v1.Utils.General).EndCaptureOutput(tCookie,.tMsgArray)
+         If $$$ISERR(sc) Quit
+         If (retVal = 0) Quit
+         Set msg = "Fhir Server "_np_" deleted"
+         Set statusCode = 1
+         Set result = {}
+         Set result.msg = msg
+         Set result.statusCode = statusCode
+         Return ..%ProcessResult($$$OK, result)
+    }
+    Catch ex {
+          If (retVal = 0){
+            Set msg = "%Status exception"
+            Set code = "Fhir server not deleted, internal error"
+          }
+          Else {
+            Set sc = ex.AsStatus()
+            Do $SYSTEM.Status.DisplayError(sc)
+            Set msg = "%Status exception"
+            Set code = ex.Code
+            Set data = $LISTGET(ex.Data,1)
+          }
+          
+          Set error = {}
+          Set error.Message = msg
+          Set error.Code = code
+          Set error.data = data
+          Set $NAMESPACE = "DEMO"
+          Return ..%ProcessResult($$$OK, error)
+    }
+}
+
+ClassMethod CreateFhirServer(np As %String) As %Status
+{
+    #dim tCookie As %String
+    #dim tMsgArray As %DynamicArray = []
+    Set sc = $$$OK
+    Try {
+        #; Capture output
+         //Set tSC=##class(%Atelier.v1.Utils.General).BeginCaptureOutput(.tCookie)
+         //Set retVal = ##class(Services.FHIRServerService).CreateFHIRServer(np)
+         Job ##class(Services.FHIRServerService).CreateFHIRServer(np)
+         //Set retVal = ##class(Services.FHIRServerService).CreateFhirServerUsingQueue(np)
+         //If $DATA(tCookie) Do ##class(%Atelier.v1.Utils.General).EndCaptureOutput(tCookie,.tMsgArray)
+         //If $$$ISERR(tSC) Quit
+         Set msg = "Fhir Server "_np_" creation in progress..."
+         Set statusCode = 1
+         Set result = {}
+         Set result.msg = msg
+         Set result.statusCode = statusCode
+         Return ..%ProcessResult($$$OK, result)
+    }
+    Catch ex {
+          Set sc = ex.AsStatus()
+          Do $SYSTEM.Status.DisplayError(sc)
+          Set msg = "%Status exception"
+          Set code = ex.Code
+          Set data = $LISTGET(ex.Data,1)
+          Set error = {}
+          Set error.Message = msg
+          Set error.Code = code
+          Set error.data = data
+          Return ..%ProcessResult($$$OK, error)
+        }
 }
 
 ClassMethod GetSampleVals(res As %String, sp As %String) As %String
@@ -69,6 +152,104 @@ ClassMethod GetInfo() As %String
   Set fhirservers = []
   Set sc =  ##class(Services.FHIRServerService).FindFhirServers(.fhirservers)
   Return ..%ProcessResult($$$OK, fhirservers)
+}
+
+ClassMethod GetDirectories(root As %String) As %String
+{
+  Set fhirdirs = []
+  Try {
+     $$$TOE(sc, ##class(Services.FHIRServerService).GetDirectoryTree("/"_root,"*.json",.fhirdirs))
+     Return ..%ProcessResult($$$OK, fhirdirs)
+  }
+  Catch ex {
+        Set sc = ex.AsStatus()
+        //Do $SYSTEM.Status.DisplayError(sc)
+        Set msg = "%Status exception"
+        Set code = ex.Code
+        Set data = $LISTGET(ex.Data,1)
+        Set error = {}
+        Set error.Message = msg
+        Set error.Code = code
+        Set error.data = data_" does not exists"
+        Return ..%ProcessResult($$$OK, error)
+  }
+}
+
+ClassMethod GetFileCount() As %String
+{
+  Set fhirdirs = []
+  Set pathRequest = %request.Data("path",1)
+  Set newRequest = $REPLACE(pathRequest, "'", "")
+  Set pCount = 0
+  Set fhirCount = {}
+  Try {
+     $$$TOE(sc, ##class(Services.FHIRServerService).GetFileCount(newRequest,"*.json", .pCount))
+     Set fhirCount.count = pCount
+     Return ..%ProcessResult($$$OK, fhirCount)
+  }
+  Catch ex {
+        Set sc = ex.AsStatus()
+        //Do $SYSTEM.Status.DisplayError(sc)
+        Set msg = "%Status exception"
+        Set code = ex.Code
+        Set data = $LISTGET(ex.Data,1)
+        Set error = {}
+        Set error.Message = msg
+        Set error.Code = code
+        Set error.data = data_" does not exists"
+        Set fhirCount.count = 0
+        Return ..%ProcessResult($$$OK, fhirCount)
+  }
+}
+
+ClassMethod LoadFhirData(np As %String) As %String
+{
+  Set fhirdirs = []
+  Set pathRequest = %request.Data("path",1)
+  Set newRequest = $REPLACE(pathRequest, "'", "")
+  Set pCount = 0
+  Set fhirCount = {}
+  Set fhirCount.message = "Loading json bundles into namespace="_np_" using path="_newRequest
+  Try {
+     $$$TOE(sc, ##class(Services.FHIRServerService).GetFileCount(newRequest,"*.json", .pCount))
+     Set fhirCount.count = pCount
+     Job ##class(Services.FHIRServerService).LoadSampleData(np, newRequest)
+     
+     Return ..%ProcessResult($$$OK, fhirCount)
+  }
+  Catch ex {
+        Set sc = ex.AsStatus()
+        //Do $SYSTEM.Status.DisplayError(sc)
+        Set msg = "%Status exception"
+        Set code = ex.Code
+        Set data = $LISTGET(ex.Data,1)
+        Set error = {}
+        Set error.Message = "Unable to load bundles"
+        Set error.Code = code
+        Set error.data = data
+        Return ..%ProcessResult($$$OK, error)
+  }
+}
+
+ClassMethod ProgressLoadFhirData(np As %String) As %String
+{
+  Set fhirlog = {}
+  Try {
+     $$$TOE(sc, ##class(Services.FHIRServerService).SampleLoadProgress(np, .fhirlog))     
+     Return ..%ProcessResult($$$OK, fhirlog)
+  }
+  Catch ex {
+        Set sc = ex.AsStatus()
+        //Do $SYSTEM.Status.DisplayError(sc)
+        Set msg = "%Status exception"
+        Set code = ex.Code
+        Set data = $LISTGET(ex.Data,1)
+        Set error = {}
+        Set error.Message = "Unable to determine progress"
+        Set error.Code = code
+        Set error.data = data
+        Return ..%ProcessResult($$$OK, error)
+  }
 }
 
 /// Get and Return a list of all FHIR resources
@@ -349,118 +530,6 @@ ClassMethod CompareArrays2(ByRef pFirst, ByRef pSecond, Output pMessage) As %Boo
     }
     
     Return $$$YES
-}
-
-/// Load sample data into newly created FHIRServer
-ClassMethod LoadSampleData(path As %String, np As %String) As %Status
-{
-    // example path to resources 
-    // example serve path  np=Demo "/csp/healthshare/fhir/demo/r4"
-    Set sc = $$$OK
-    Set appKey= "/csp/healthshare/fhir/"_np_"/r4"
-    Try {
-        Set $NAMESPACE = np
-        Set status = ##class(HS.FHIRServer.Tools.DataLoader).SubmitResourceFiles(path, "FHIRServer", appKey)
-    }
-    Catch ex {
-        Set tSC=ex.AsStatus()
-    }
-    Return sc
-}
-
-ClassMethod AddMap(packageName As %String, datadb As %String)
-{
-    Set Namespace = "%ALL"
-    Set $NAMESPACE = "%SYS"
-    Set Properties("Database")= datadb
-    //Set status = $SYSTEM.Config.MapPackages.Create(Namespace,packageName,.Properties)
-    Set status = ##class(Config.MapPackages).Create(Namespace,packageName,.Properties)
-    If ('status=$$$OK){
-        Do $SYSTEM.Status.DisplayError(status)
-    }
-}
-
-/// Description - for a new FHIR server definition add some packages
-/// from the demo namespace or other namespace to target database
-ClassMethod AddPackageMappings(np As %String) As %Status
-{
-    Set sc = $$$OK
-
-    Try {
-        //determine if the %ALL namespace exists, and set it if it does
-        If (##class(%SYS.Namespace).Exists("%ALL")){
-            
-        }
-        Else {
-            // if not create it
-            Set $NAMESPACE = "HSLIB"
-            Do ##class(HS.HC.Util.Installer).InstallFoundation("%ALL")
-            Set $NAMESPACE = "%ALL"
-        }  
-    }
-    Catch ex {
-        Set tSC=ex.AsStatus()
-    }
-    Set Namespace = np
-    Set Properties("Database")= np
-    
-    Do ..AddMap("Rest", np)
-    Do ..AddMap("Services", np)
-    Do ..AddMap("BaseTypes", np)
-    Do ..AddMap("Collections", np)
-    Do ..AddMap("Framework", np)
-
-    Return sc
-}
-
-/// Configure a FHIR Server in a namespace that already exist
-ClassMethod CreateFHIRServer(np As %String) As %Status
-{
-    Set sc = $$$OK
-    Set tSC = $$$OK
-    Set appKey= "/csp/healthshare/fhir/"_np_"/r4"
-    Set strategyClass = "HS.FHIRServer.Storage.Json.InteractionsStrategy"
-    Try {
-        //determine if the namespace exists, and set it if it does
-        If (##class(%SYS.Namespace).Exists(np)){
-            Set $NAMESPACE = np
-        }
-        Else {
-            // if not create it
-            Set $NAMESPACE = "HSLIB"
-            Do ##class(HS.HC.Util.Installer).InstallFoundation(np)
-            Set $NAMESPACE = np
-        }  
-    }
-    Catch ex {
-        Set tSC=ex.AsStatus()
-    }
-    //next determine if the fhir sever already exists
-    If (##class(HS.FHIRServer.Installer).CSPAppExists(appKey)){
-        Write "FHIR server exists at path:"_appKey
-    }
-    Else {
-        Set metadataPackages = $LISTBUILD("hl7.fhir.r4.core@4.0.1","hl7.fhir.us.core@3.1.0")
-        Do ##class(HS.FHIRServer.Installer).InstallNamespace()
-        Do ##class(HS.FHIRServer.Installer).InstallInstance(appKey, strategyClass, metadataPackages)
-        Set strategy = ##class(HS.FHIRServer.API.InteractionsStrategy).GetStrategyForEndpoint(appKey)
-        Set configData = strategy.GetServiceConfigData()
-        Set configData.DefaultSearchPageSize = 1000
-        Set configData.MaxSearchPageSize = 1000
-        Set configData.MaxSearchResults = 1000
-        Do strategy.SaveServiceConfigData(configData)
-    }
-
-    
-    Return sc
-}
-
-ClassMethod DeleteFHIRServer(np As %String) As %Status
-{
-    Set sc = $$$OK
-    Set appKey= "/csp/healthshare/fhir/"_np_"/r4"
-    Do ##class(HS.FHIRServer.Installer).UninstallInstance(appKey)
-    Return sc
 }
 
 }

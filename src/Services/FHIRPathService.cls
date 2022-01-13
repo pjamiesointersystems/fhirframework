@@ -281,7 +281,7 @@ ClassMethod FHIRPathValues(res As %String, sp As %String) As %Library.DynamicArr
        Set exp = sp
    }
 
-   If (exp = "") {
+   If ((exp = "") || (exp = sp)) {
        //see if replacing sp (search parameter) "-" with "."
        Set exp = ..TransformFhirPathExpression(sp)
    }
