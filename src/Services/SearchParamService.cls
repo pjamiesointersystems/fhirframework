@@ -1,3 +1,6 @@
+/// this class contains the search parameters for every resource
+/// it is created by parsing the HL7 FHIR search-parameters.json file
+/// 
 Class Services.SearchParamService Extends %Persistent
 {
 
@@ -81,7 +84,7 @@ Method ReadFHIRSearchParams() As %Status
     
     Set sc = $$$OK
     Try {
-    Set FhirSearchParamObj = {}.%FromJSON(..#FHIRSearchParamFileName)
+    Set FhirSearchParamObj = {}.%FromJSONFile(..#FHIRSearchParamFileName)
     }
     Catch err {
         Write !, "Error name: ", ?20, err.Name,
