@@ -1,11 +1,11 @@
 Class BaseTypes.RevSearchParameter Extends (%Persistent, %JSON.Adaptor)
 {
 
-Property TargetResource As %String;
+Property TargetResource As %String(MAXLEN = 100) [ Required ];
 
-Property BaseResource As %String;
+Property BaseResource As %String(MAXLEN = 100) [ Required ];
 
-Property SearchField As %String;
+Property SearchField As %String(MAXLEN = 100);
 
 Method %OnNew(tr As %String, bree As %String) As %Status
 {

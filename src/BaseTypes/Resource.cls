@@ -1,7 +1,7 @@
 Class BaseTypes.Resource Extends (%Persistent, %JSON.Adaptor)
 {
 
-Property ResName As %String;
+Property ResName As %String(MAXLEN = 100) [ Required ];
 
 Method %OnNew(resName As %String) As %Status
 {

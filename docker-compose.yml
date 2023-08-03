@@ -1,0 +1,60 @@
+version: "3.7"
+
+networks:
+ fhir-net:
+  name: fhir-net
+  driver: bridge
+  ipam:
+    config:
+      - subnet: 172.1.1.0/24
+
+services:
+  iris:
+    image: containers.intersystems.com/intersystems/irishealth-arm64:2023.2.0.201.0
+    container_name: irishealth
+    hostname: irishealth
+    networks:
+      fhir-net:
+        ipv4_address: 172.1.1.40
+    ports:
+      [
+        "1972:1972",
+        "52773:52773",
+        "7038:7038"
+      ]
+    volumes:
+      [
+        "./data:/data",
+        "/Users/pjamieso/Development/ObjectScript/FHIRFramework:/code"
+      ]
+    environment: [ 
+                  "ISC_DATA_DIRECTORY=/data/ifconfig",
+                  "ISC_CPF_MERGE_FILE=/data/merge/CMF.cpf"
+                  ]
+    entrypoint: [ "/iris-main" ]
+    command: --key /data/iris.key
+    healthcheck: 
+      test: ["CMD", "${ISC_PACKAGE_INSTALLDIR}/dev/Cloud/ICM/waitReady.sh"]
+      interval: 10s
+      retries: 3
+      start_period: 10s
+      timeout: 10s
+
+  webgateway:
+      build:
+        context: /Users/pjamieso/Development/ObjectScript/FHIRFramework
+        dockerfile: Dockerfileweb
+      hostname: webgateway
+      container_name: webgateway 
+      environment:
+        - IRIS_HOST=172.1.1.40
+        - IRIS_PORT=1972
+        - "IRIS_WEBAPPS=/csp /csp/sys /api"
+      networks:
+        fhir-net:
+          ipv4_address: 172.1.1.41
+      ports:
+        [
+          "80:80",
+          "443:443"
+        ] 

@@ -6,7 +6,7 @@ Method %OnNew() As %Status
 {
    
     Set sc = $$$OK
-    //Set res = ##class(Services.ResourceService).%New()
+    Set res = ##class(Services.ResourceService).%New()
     //Set res = ##class(Services.SearchParamService).%New()
     //Set res = ##class(Services.RevSearchService).%New()
     //Do ##class(Rest.FHIRSearchRest).GetResources()
@@ -28,7 +28,7 @@ Method %OnNew() As %Status
     Set pCount = 0
     //Set sc=##class(Rest.FHIRSearchRest).GetFileCount()
     //Write sc
-    Do ##class(Services.FHIRServerService).LoadSampleData( "test", "/data/fhirdata/1000Set") 
+    //Do ##class(Services.FHIRServerService).LoadSampleData( "test", "/data/fhirdata/1000Set") 
     //Do ##class(Services.FHIRServerService).SampleLoadProgress("test", .logger)
     Return sc
 }

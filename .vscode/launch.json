@@ -7,6 +7,12 @@
         {
             "type": "objectscript",
             "request": "launch",
+            "name": "ObjectScript Run current routine",
+            "program": "${file}"
+        },
+        {
+            "type": "objectscript",
+            "request": "launch",
             "name": "ObjectScript Debug",
             "program": "##class(Framework.Main).%New()"
         }

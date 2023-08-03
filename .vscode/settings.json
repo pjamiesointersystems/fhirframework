@@ -1,9 +1,11 @@
 {
     "objectscript.conn": {
+        "host": "localhost",
+        "port": 80,
         "active": true,
-        "server": "dockeriris",
-        "ns": "DEMO",
-        "username": "pjamieso"
+        "server": "iris",
+        "ns": "demo",
+        "username": "_SYSTEM"
     },
     "workbench.colorTheme": "InterSystems Default Dark"
 }

@@ -7,9 +7,9 @@ Parameter %JSONNULL = 1;
 
 Parameter %JSONIGNORENULL = 1;
 
-Property BaseResource As %String;
+Property BaseResource As %String(MAXLEN = 100) [ Required ];
 
-Property Name As %String;
+Property Name As %String(MAXLEN = 100) [ Required ];
 
 Property Version As %String;
 
@@ -43,13 +43,10 @@ Method %OnNew(br As %String, name As %String, version As %String = "4.0.1", exp 
     }
     
     Set ..Type = ty
-   /*  If (comp = ""){
-        Set comp = []
-    } */
+   
     Set ..Comparator = comp
-    /* If (tar = ""){
-        Set tar = []
-    } */
+   
+   
     Set ..ResTarget = tar
     Quit $$$OK
 }

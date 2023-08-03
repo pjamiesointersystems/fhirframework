@@ -28,7 +28,7 @@ ClassMethod DeleteFHIRServer(np As %String) As %Integer
 
     Try {
         Set appKey= "/csp/healthshare/"_np_"/fhir/r4"
-        Do ##class(HS.FHIRServer.Installer).UninstallInstance(appKey)
+        Do ##class(HS.FHIRServer.Installer).UninstallInstance(appKey, 1)
         //this is the primary namespace for FHIR tools
         Set $NAMESPACE = "DEMO"
         Return 1

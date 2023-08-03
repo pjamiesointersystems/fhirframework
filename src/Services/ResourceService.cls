@@ -19,7 +19,7 @@ Method %OnNew() As %Status
          Set rn = temp.resourceNames
          Set ..resourceNames = rn
     }
-    Else {
+    else {
         Set temp = $THIS
         Set rn = ""
     }
@@ -49,7 +49,7 @@ Method ReadFHIRSchema() As %Status
 
     Set sc = $$$OK
     Try {
-    Set FhirSchemaObj = {}.%FromJSON(..#FHIRSchemaFileName)
+    Set FhirSchemaObj = {}.%FromJSONFile(..#FHIRSchemaFileName)
     }
     Catch err {
         Write !, "Error name: ", ?20, err.Name,

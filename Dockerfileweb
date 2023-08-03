@@ -1,0 +1,13 @@
+ARG IMAGE=containers.intersystems.com/intersystems/webgateway-arm64:2023.2.0.198.0  
+FROM $IMAGE
+RUN apt update -y
+RUN apt install nano -y 
+RUN apt install apache2-utils -y
+USER root
+COPY ./data/apacheconf/apache2.conf /etc/apache2/apache2.conf
+COPY ./data/apacheconf/CSP.ini  /opt/webgateway/bin/CSP.ini
+COPY --chown=www-data:www-data ./data/ssl/intersystems.key /etc/ssl/private/intersystems.key
+COPY --chown=www-data:www-data ./data/ssl/intersystems.crt /etc/ssl/certs/intersystems.crt
+COPY ./data/apacheconf/default-ssl.conf /etc/apache2/sites-available/default-ssl.conf
+ADD ./data/certs /certs
+RUN a2enmod ssl && a2enmod rewrite && a2enmod headers && a2ensite default-ssl
