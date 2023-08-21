@@ -10,7 +10,8 @@ networks:
 
 services:
   iris:
-    image: containers.intersystems.com/intersystems/irishealth-arm64:2023.2.0.201.0
+    #image: containers.intersystems.com/intersystems/irishealth-arm64:2023.2.0.201.0
+    image: containers.intersystems.com/intersystems/irishealth-arm64:2023.2.0.227.0
     container_name: irishealth
     hostname: irishealth
     networks:

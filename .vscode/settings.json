@@ -3,8 +3,8 @@
         "host": "localhost",
         "port": 80,
         "active": true,
-        "server": "iris",
-        "ns": "demo",
+        "server": "fhirserver",
+        "ns": "DEMO",
         "username": "_SYSTEM"
     },
     "workbench.colorTheme": "InterSystems Default Dark"

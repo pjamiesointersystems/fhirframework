@@ -94,8 +94,8 @@ ClassMethod CreateFhirServer(np As %String) As %Status
     Try {
         #; Capture output
          //Set tSC=##class(%Atelier.v1.Utils.General).BeginCaptureOutput(.tCookie)
-         //Set retVal = ##class(Services.FHIRServerService).CreateFHIRServer(np)
-         Job ##class(Services.FHIRServerService).CreateFHIRServer(np)
+         Set retVal = ##class(Services.FHIRServerService).CreateFHIRServer(np)
+         //Job ##class(Services.FHIRServerService).CreateFHIRServer(np)
          //Set retVal = ##class(Services.FHIRServerService).CreateFhirServerUsingQueue(np)
          //If $DATA(tCookie) Do ##class(%Atelier.v1.Utils.General).EndCaptureOutput(tCookie,.tMsgArray)
          //If $$$ISERR(tSC) Quit

@@ -73,7 +73,7 @@ Method ReadFHIRRevInclude() As %Status
     
     Set sc = $$$OK
     Try {
-    Set FhirRevIncludeObj = {}.%FromJSON(..#FHIRRevIncludeFileName)
+    Set FhirRevIncludeObj = {}.%FromJSONFile(..#FHIRRevIncludeFileName)
     }
     Catch err {
         Write !, "Error name: ", ?20, err.Name,

@@ -12,9 +12,9 @@
         },
         {
             "type": "objectscript",
-            "request": "launch",
-            "name": "ObjectScript Debug",
-            "program": "##class(Framework.Main).%New()"
+            "request": "attach",
+            "name": "ObjectScript Rest Debug",
+            "processId": "${command:PickProcess}"
         }
     ]
 }

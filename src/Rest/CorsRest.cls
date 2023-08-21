@@ -1,4 +1,4 @@
-Class Rest.SearchRest Extends %CSP.REST [ System = 3 ]
+Class Rest.CorsRest Extends %CSP.REST [ System = 3 ]
 {
 
 Parameter CHARSET = "utf-8";
